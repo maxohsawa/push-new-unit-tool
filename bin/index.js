@@ -2,9 +2,9 @@
 import inquirer from 'inquirer';
 import { execSync } from 'child_process';
 import { readFile, readdir } from 'fs/promises';
-const { instructorRepo, studentRepo } = JSON.parse(
+const { instructorRepo, studentRepo, remoteBranch } = JSON.parse(
   await readFile(
-    new URL('../directories.json', import.meta.url)
+    new URL('../config.json', import.meta.url)
   )
 );
 
@@ -12,7 +12,7 @@ function log(input) {
   console.log(`>_ ${input}`);
 }
 
-log(">_ This CLI tool copies over a unit from the instructor repo to the student repo, without Solved or Main folders, commits and pushes the changes to the student repo remote origin. Instructor and student repos should already exist and paths should be added to the directories.json file.");
+log(">_ This CLI tool copies over a unit from the instructor repo to the student repo, without Solved or Main folders, commits and pushes the changes to the student repo remote origin. Instructor and student repos should already exist and paths should be added to the config.json file. Remote name and branch name should also be added to config.json.");
 
 inquirer
   .prompt([
@@ -46,14 +46,25 @@ inquirer
       execSync(`find ${studentRepo}/${unitName} -name 'Main' -type d -prune -exec rm -rf '{}' +`);
 
       log("Removed Main folders..");
+      log("git adding all..");
+
+      execSync(`cd ${studentRepo} && git add -A`);
+
+      log("git commiting with message..");
+
+      execSync(`cd ${studentRepo} && git commit -m "adds unit ${unitName} sans Solved and Main directories"`);
+
+      log("git pushing")
+
+      execSync(`cd ${studentRepo} && git push ${remoteBranch}`);
+
+      log("Completed.")
       
     } catch(err) {
-      if (error) {
-        console.error(`error: ${error.message}`);
+      if (err) {
+        console.error(`error: ${err.message}`);
         return;
       }
     }
-    
-
 
   });
